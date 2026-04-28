@@ -5,14 +5,25 @@
 ## Usage
 
 ```md
-![record rotate](https://record-rotate.<your-subdomain>.workers.dev/?albums=Travis%20Scott%20-%20Rodeo,Kanye%20West%20-%20Graduation,Kendrick%20Lamar%20-%20DAMN.)
+![record rotate](https://record-rotate.<your-subdomain>.workers.dev/?albums=Travis%20Scott:Rodeo,Kanye%20West:Graduation,Kendrick%20Lamar:DAMN.)
 ```
 
-`albums`는 쉼표로 구분합니다. 앨범명만 넣어도 되지만, 검색 정확도를 위해 `Artist - Album` 형식을 권장합니다.
+`albums`는 쉼표로 구분합니다. 앨범명만 넣어도 되지만, 검색 정확도를 위해 `Artist:Album` 형식을 권장합니다. `albums`가 없으면 앨범 커버는 표시하지 않습니다.
 
 ```txt
-?albums=Travis Scott - Rodeo,Kanye West - Graduation,Kendrick Lamar - DAMN.
+?albums=Travis Scott:Rodeo,Kanye West:Graduation,Kendrick Lamar:DAMN.
 ```
+
+콜론(`:`)을 쓰면 콜론 앞은 아티스트명, 뒤는 앨범명으로 인식해서 검색 결과를 더 정확하게 고릅니다.
+
+`width`로 SVG 크기를 조절할 수 있습니다. 높이는 고정 비율로 자동 계산됩니다.
+
+```md
+![record rotate](https://record-rotate.<your-subdomain>.workers.dev/?width=900&albums=Travis%20Scott:Rodeo,Kanye%20West:Graduation)
+```
+
+- `width`: 360~1200, 기본값 760
+- 비율: 760:280
 
 ## Development
 
