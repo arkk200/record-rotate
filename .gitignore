@@ -1,0 +1,10 @@
+node_modules/
+.wrangler/
+.claude/
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+npm-debug.log*
