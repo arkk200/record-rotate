@@ -42,3 +42,7 @@ export type Dimensions = {
   stepX: number;
   labelGap: number;
 };
+
+export type RenderOptions = {
+  showTitle: boolean;
+};

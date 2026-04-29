@@ -1,5 +1,5 @@
 import { ASPECT_RATIO, DEFAULT_WIDTH, MAX_ALBUMS, MAX_WIDTH, MIN_WIDTH } from "./config";
-import type { AlbumQuery, Dimensions } from "./types";
+import type { AlbumQuery, Dimensions, RenderOptions } from "./types";
 
 export function parseAlbums(url: URL): AlbumQuery[] {
   const raw = url.searchParams.get("albums");
@@ -76,6 +76,20 @@ export function parseDimensions(url: URL): Dimensions {
     stepX: Math.round(width * 0.182),
     labelGap: Math.max(22, Math.round(height * 0.1)),
   };
+}
+
+export function parseRenderOptions(url: URL): RenderOptions {
+  return {
+    showTitle: parseBooleanFlag(url.searchParams.get("title")),
+  };
+}
+
+function parseBooleanFlag(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
 function parseBoundedInteger(value: string | null, fallback: number, min: number, max: number): number {

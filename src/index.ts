@@ -1,5 +1,5 @@
 import { resolveAlbum } from "./lib/itunes";
-import { parseAlbums, parseDimensions } from "./lib/query";
+import { parseAlbums, parseDimensions, parseRenderOptions } from "./lib/query";
 import { renderSvg } from "./lib/svg";
 
 export default {
@@ -11,8 +11,9 @@ export default {
     const url = new URL(request.url);
     const albumQueries = parseAlbums(url);
     const dimensions = parseDimensions(url);
+    const renderOptions = parseRenderOptions(url);
     const albums = await Promise.all(albumQueries.map(resolveAlbum));
-    const svg = renderSvg(albums, dimensions);
+    const svg = renderSvg(albums, dimensions, renderOptions);
 
     return new Response(svg, {
       headers: {
