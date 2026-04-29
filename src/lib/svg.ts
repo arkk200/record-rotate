@@ -7,9 +7,11 @@ const COVER_RADIUS_RATIO = 0.08;
 const BUFFER_OFFSET = Math.max(...SLOT_OFFSETS.map((offset) => Math.abs(offset)));
 const CURVE_DEPTH_RATIO = 0.36;
 const CURVE_EASE_POWER = 1.35;
-const LABEL_COVER_GAP_RATIO = 0.45;
-const MIN_LABEL_COVER_GAP = 19;
+const DESIGN_WIDTH = 1000;
+const LABEL_COVER_GAP = 19;
 const LABEL_LINE_GAP = 17;
+const TITLE_FONT_SIZE = 16;
+const ARTIST_FONT_SIZE = 12;
 const INTRO_DURATION = 1.35;
 const INTRO_START_SPEED_MULTIPLIER = 36;
 const INTRO_DECAY_POWER = 2;
@@ -103,7 +105,8 @@ function renderCarouselItem(
   const initialStyle = getTrackStyle(trackPosition + INTRO_SAMPLE_OFFSETS[0]);
   const initialOpacity = getLayerOpacity(trackPosition + INTRO_SAMPLE_OFFSETS[0], layer);
   const coverOffset = -dimensions.baseSize / 2;
-  const labelY = dimensions.baseSize / 2 + Math.max(MIN_LABEL_COVER_GAP, Math.round(dimensions.labelGap * LABEL_COVER_GAP_RATIO));
+  const designScale = getDesignScale(dimensions);
+  const labelY = dimensions.baseSize / 2 + scaleDesignValue(LABEL_COVER_GAP, designScale);
   const cornerRadius = Number((dimensions.baseSize * COVER_RADIUS_RATIO).toFixed(2));
 
   return `    <g transform="translate(${initialPosition.x.toFixed(2)} ${initialPosition.y.toFixed(2)})" opacity="${initialOpacity}" filter="url(#coverShadow)">
@@ -119,7 +122,7 @@ function renderCarouselItem(
           <animate attributeName="opacity" values="${keyframes.introShadeValues}" keyTimes="${INTRO_KEY_TIMES}" dur="${INTRO_DURATION}s" begin="0s" calcMode="linear" fill="freeze"/>
           <animate attributeName="opacity" values="${keyframes.loopShadeValues}" keyTimes="${keyframes.keyTimes}" dur="${keyframes.duration}s" begin="${INTRO_DURATION}s" repeatCount="indefinite"/>
         </rect>
-        ${renderOptions.showTitle && layer === CENTER_LAYER ? renderLabel(album, labelY, keyframes.introLabelOpacityValues, keyframes.loopLabelOpacityValues, keyframes.keyTimes, keyframes.duration) : ""}
+        ${renderOptions.showTitle && layer === CENTER_LAYER ? renderLabel(album, labelY, designScale, keyframes.introLabelOpacityValues, keyframes.loopLabelOpacityValues, keyframes.keyTimes, keyframes.duration) : ""}
       </g>
     </g>`;
 }
@@ -261,6 +264,14 @@ function formatTrackPoint(point: TrackPoint): string {
   return `${point.x.toFixed(2)} ${point.y.toFixed(2)}`;
 }
 
+function getDesignScale(dimensions: Dimensions): number {
+  return dimensions.width / DESIGN_WIDTH;
+}
+
+function scaleDesignValue(value: number, scale: number): number {
+  return Number((value * scale).toFixed(2));
+}
+
 function renderCoverSymbol(album: Album, index: number): string {
   if (album.imageDataUri) {
     return `    <symbol id="cover-${index}" viewBox="0 0 100 100">
@@ -283,15 +294,20 @@ function renderCoverUse(albumIndex: number, x: number, y: number, size: number):
 function renderLabel(
   album: Album,
   y: number,
+  scale: number,
   introOpacityValues: string,
   loopOpacityValues: string,
   keyTimes: string,
   duration: number,
 ): string {
+  const titleFontSize = scaleDesignValue(TITLE_FONT_SIZE, scale);
+  const artistFontSize = scaleDesignValue(ARTIST_FONT_SIZE, scale);
+  const lineGap = scaleDesignValue(LABEL_LINE_GAP, scale);
+
   return `<g opacity="0">
       <animate attributeName="opacity" values="${introOpacityValues}" keyTimes="${INTRO_KEY_TIMES}" dur="${INTRO_DURATION}s" begin="0s" calcMode="linear" fill="freeze"/>
       <animate attributeName="opacity" values="${loopOpacityValues}" keyTimes="${keyTimes}" dur="${duration}s" begin="${INTRO_DURATION}s" repeatCount="indefinite"/>
-      <text x="0" y="${y}" fill="#f6f6f6" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle">${escapeXml(truncate(album.title, 34))}</text>
-      <text x="0" y="${y + LABEL_LINE_GAP}" fill="#8c8c8c" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle">${escapeXml(truncate(album.artist, 42))}</text>
+      <text x="0" y="${y}" fill="#f6f6f6" font-family="Arial, Helvetica, sans-serif" font-size="${titleFontSize}" font-weight="700" text-anchor="middle">${escapeXml(truncate(album.title, 34))}</text>
+      <text x="0" y="${y + lineGap}" fill="#8c8c8c" font-family="Arial, Helvetica, sans-serif" font-size="${artistFontSize}" text-anchor="middle">${escapeXml(truncate(album.artist, 42))}</text>
     </g>`;
 }
