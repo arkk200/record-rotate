@@ -65,7 +65,7 @@ function splitPair(value: string, separator: string): [string, string] | undefin
 export function parseDimensions(url: URL): Dimensions {
   const width = parseBoundedInteger(url.searchParams.get("width"), DEFAULT_WIDTH, MIN_WIDTH, MAX_WIDTH);
   const height = Math.round(width * ASPECT_RATIO);
-  const baseSize = Math.round(Math.min(width * 0.22, height * 0.62));
+  const baseSize = Math.round(width * 0.22);
 
   return {
     width,
