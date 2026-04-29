@@ -7,6 +7,9 @@ const COVER_RADIUS_RATIO = 0.08;
 const BUFFER_OFFSET = Math.max(...SLOT_OFFSETS.map((offset) => Math.abs(offset)));
 const CURVE_DEPTH_RATIO = 0.36;
 const CURVE_EASE_POWER = 1.35;
+const LABEL_COVER_GAP_RATIO = 0.45;
+const MIN_LABEL_COVER_GAP = 19;
+const LABEL_LINE_GAP = 17;
 const INTRO_DURATION = 1.35;
 const INTRO_START_SPEED_MULTIPLIER = 36;
 const INTRO_DECAY_POWER = 2;
@@ -100,7 +103,7 @@ function renderCarouselItem(
   const initialStyle = getTrackStyle(trackPosition + INTRO_SAMPLE_OFFSETS[0]);
   const initialOpacity = getLayerOpacity(trackPosition + INTRO_SAMPLE_OFFSETS[0], layer);
   const coverOffset = -dimensions.baseSize / 2;
-  const labelY = dimensions.baseSize / 2 + dimensions.labelGap;
+  const labelY = dimensions.baseSize / 2 + Math.max(MIN_LABEL_COVER_GAP, Math.round(dimensions.labelGap * LABEL_COVER_GAP_RATIO));
   const cornerRadius = Number((dimensions.baseSize * COVER_RADIUS_RATIO).toFixed(2));
 
   return `    <g transform="translate(${initialPosition.x.toFixed(2)} ${initialPosition.y.toFixed(2)})" opacity="${initialOpacity}" filter="url(#coverShadow)">
@@ -289,6 +292,6 @@ function renderLabel(
       <animate attributeName="opacity" values="${introOpacityValues}" keyTimes="${INTRO_KEY_TIMES}" dur="${INTRO_DURATION}s" begin="0s" calcMode="linear" fill="freeze"/>
       <animate attributeName="opacity" values="${loopOpacityValues}" keyTimes="${keyTimes}" dur="${duration}s" begin="${INTRO_DURATION}s" repeatCount="indefinite"/>
       <text x="0" y="${y}" fill="#f6f6f6" font-family="Arial, Helvetica, sans-serif" font-size="16" font-weight="700" text-anchor="middle">${escapeXml(truncate(album.title, 34))}</text>
-      <text x="0" y="${y + 22}" fill="#8c8c8c" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle">${escapeXml(truncate(album.artist, 42))}</text>
+      <text x="0" y="${y + LABEL_LINE_GAP}" fill="#8c8c8c" font-family="Arial, Helvetica, sans-serif" font-size="12" text-anchor="middle">${escapeXml(truncate(album.artist, 42))}</text>
     </g>`;
 }
