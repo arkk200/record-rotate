@@ -1,6 +1,8 @@
 # record-rotate
 
-![record rotate](https://record-rotate.arkk200.workers.dev/?width=900&title=on&albums=Travis%20Scott:Utopia,Kanye%20West:Graduation,Sweet%20Trip:You%Will%Never%20Know%20Why)
+<p align="center">
+  <img src="https://record-rotate.arkk200.workers.dev/?width=900&title=on&albums=Travis%20Scott:Utopia,Kanye%20West:Graduation,Sweet%20Trip:You%20Will%20Never%20Know%20Why" alt="record rotate" />
+</p>
 
 앨범 제목을 작성하면 iTunes Search API로 커버를 찾아 GitHub 프로필용 SVG 슬라이드를 만들어줍니다.
 
