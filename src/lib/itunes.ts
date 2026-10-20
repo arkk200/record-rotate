@@ -1,15 +1,14 @@
 import { imageToDataUri } from "./image";
-import type { Album, AlbumQuery, ITunesAlbumResult, ITunesArtistResult, ITunesSearchResponse } from "./types";
+import type { Album, AlbumQuery, DeezerAlbum, DeezerAlbumSearchResponse } from "./types";
 import { normalizeSearchText } from "./utils";
+
+const DEEZER_SEARCH_URL = "https://api.deezer.com/search/album";
 
 export async function resolveAlbum(query: AlbumQuery): Promise<Album> {
   const fallback = makeFallbackAlbum(query);
 
   try {
-    const album = query.artist && query.album
-      ? await searchAlbumByArtistAndTitle(query)
-      : await searchAlbum(query);
-
+    const album = await searchAlbum(query);
     if (!album) {
       return fallback;
     }
@@ -18,89 +17,39 @@ export async function resolveAlbum(query: AlbumQuery): Promise<Album> {
       ...album,
       imageDataUri: await imageToDataUri(album.imageDataUri ?? ""),
     };
-  } catch {
+  } catch (e) {
+    console.error(e);
     return fallback;
   }
 }
 
 async function searchAlbum(query: AlbumQuery): Promise<Album | null> {
-  const params = new URLSearchParams({
-    term: query.term,
-    entity: "album",
-    limit: "1",
-  });
+  const results = await searchAlbums(buildSearchTerm(query));
+  const best = pickBestAlbum(results, query);
 
-  const data = await fetchITunes<ITunesAlbumResult>(`https://itunes.apple.com/search?${params.toString()}`);
-  const result = data.results[0];
-
-  return albumFromResult(result, query.raw);
+  return albumFromResult(best, query.raw);
 }
 
-async function searchAlbumByArtistAndTitle(query: AlbumQuery): Promise<Album | null> {
-  const artist = await findArtist(query.artist ?? "");
-  if (artist?.artistId) {
-    const lookupParams = new URLSearchParams({
-      id: String(artist.artistId),
-      entity: "album",
-      limit: "100",
-    });
-    const lookup = await fetchITunes<ITunesAlbumResult | ITunesArtistResult>(`https://itunes.apple.com/lookup?${lookupParams.toString()}`);
-    const result = pickBestAlbumResult(lookup.results.filter(isAlbumResult), query);
-
-    if (result) {
-      return albumFromResult(result, query.raw);
-    }
+function buildSearchTerm(query: AlbumQuery): string {
+  if (query.artist && query.album) {
+    return `artist:"${escapeQuoted(query.artist)}" album:"${escapeQuoted(query.album)}"`;
   }
 
-  return searchAlbum(query);
+  return query.term;
 }
 
-async function findArtist(artistName: string): Promise<ITunesArtistResult | undefined> {
+async function searchAlbums(term: string): Promise<DeezerAlbum[]> {
   const params = new URLSearchParams({
-    term: artistName,
-    entity: "musicArtist",
+    q: term,
     limit: "10",
   });
-  const data = await fetchITunes<ITunesArtistResult>(`https://itunes.apple.com/search?${params.toString()}`);
-  const normalizedArtist = normalizeSearchText(artistName);
 
-  return data.results
-    .map((artist) => ({
-      artist,
-      score: scoreArtistResult(artist, normalizedArtist),
-    }))
-    .sort((left, right) => right.score - left.score)[0]?.artist;
+  const data = await fetchJson<DeezerAlbumSearchResponse>(`${DEEZER_SEARCH_URL}?${params.toString()}`);
+
+  return data.data ?? [];
 }
 
-async function fetchITunes<T>(url: string): Promise<ITunesSearchResponse<T>> {
-  const response = await fetch(url, {
-    headers: {
-      accept: "application/json",
-      "user-agent": "record-rotate/0.1",
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`iTunes request failed: ${response.status}`);
-  }
-
-  return response.json() as Promise<ITunesSearchResponse<T>>;
-}
-
-function albumFromResult(result: ITunesAlbumResult | undefined, query: string): Album | null {
-  if (!result?.collectionName || !result.artistName || !result.artworkUrl100) {
-    return null;
-  }
-
-  return {
-    query,
-    title: result.collectionName,
-    artist: result.artistName,
-    imageDataUri: upgradeArtworkUrl(result.artworkUrl100),
-  };
-}
-
-function pickBestAlbumResult(results: ITunesAlbumResult[], query: AlbumQuery): ITunesAlbumResult | undefined {
+function pickBestAlbum(results: DeezerAlbum[], query: AlbumQuery): DeezerAlbum | undefined {
   if (!query.artist || !query.album) {
     return results[0];
   }
@@ -111,24 +60,14 @@ function pickBestAlbumResult(results: ITunesAlbumResult[], query: AlbumQuery): I
   return results
     .map((result) => ({
       result,
-      score: scoreAlbumResult(result, normalizedArtist, normalizedAlbum),
+      score: scoreAlbum(result, normalizedArtist, normalizedAlbum),
     }))
     .sort((left, right) => right.score - left.score)[0]?.result;
 }
 
-function scoreArtistResult(result: ITunesArtistResult, artist: string): number {
-  const resultArtist = normalizeSearchText(result.artistName ?? "");
-  let score = 0;
-
-  if (resultArtist === artist) score += 100;
-  if (resultArtist.includes(artist) || artist.includes(resultArtist)) score += 50;
-
-  return score;
-}
-
-function scoreAlbumResult(result: ITunesAlbumResult, artist: string, album: string): number {
-  const resultArtist = normalizeSearchText(result.artistName ?? "");
-  const resultAlbum = normalizeSearchText(result.collectionName ?? "");
+function scoreAlbum(result: DeezerAlbum, artist: string, album: string): number {
+  const resultArtist = normalizeSearchText(result.artist?.name ?? "");
+  const resultAlbum = normalizeSearchText(result.title ?? "");
   let score = 0;
 
   if (resultAlbum === album) score += 100;
@@ -139,12 +78,35 @@ function scoreAlbumResult(result: ITunesAlbumResult, artist: string, album: stri
   return score;
 }
 
-function isAlbumResult(result: ITunesAlbumResult | ITunesArtistResult): result is ITunesAlbumResult {
-  return "collectionName" in result;
+function albumFromResult(result: DeezerAlbum | undefined, query: string): Album | null {
+  if (!result?.title || !result.artist?.name) {
+    return null;
+  }
+
+  return {
+    query,
+    title: result.title,
+    artist: result.artist.name,
+    imageDataUri: result.cover_xl,
+  };
 }
 
-function upgradeArtworkUrl(url: string): string {
-  return url.replace(/\/100x100bb\.(jpg|png|webp)$/i, "/600x600bb.$1");
+async function fetchJson<T>(url: string): Promise<T> {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Deezer request failed: ${response.status}`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+function escapeQuoted(value: string): string {
+  return value.replace(/"/g, "");
 }
 
 function makeFallbackAlbum(query: AlbumQuery): Album {

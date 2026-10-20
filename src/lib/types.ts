@@ -5,23 +5,17 @@ export type Album = {
   imageDataUri?: string;
 };
 
-export type ITunesAlbumResult = {
-  wrapperType?: string;
-  collectionType?: string;
-  artistName?: string;
-  collectionName?: string;
-  artworkUrl100?: string;
+export type DeezerAlbum = {
+  title?: string;
+  cover_xl?: string;
+  artist?: {
+    name?: string;
+  };
 };
 
-export type ITunesArtistResult = {
-  wrapperType?: string;
-  artistName?: string;
-  artistId?: number;
-};
-
-export type ITunesSearchResponse<T> = {
-  resultCount: number;
-  results: T[];
+export type DeezerAlbumSearchResponse = {
+  data: DeezerAlbum[];
+  total: number;
 };
 
 export type AlbumQuery = {
