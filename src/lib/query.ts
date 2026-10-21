@@ -30,18 +30,6 @@ function parseAlbumQuery(value: string): AlbumQuery | undefined {
     };
   }
 
-  const dashParts = splitPair(raw, " - ");
-  if (dashParts) {
-    const [artist, album] = dashParts;
-
-    return {
-      raw,
-      fallbackArtist: artist,
-      fallbackTitle: album,
-      term: raw,
-    };
-  }
-
   return {
     raw,
     fallbackArtist: "Unknown Artist",
@@ -80,16 +68,8 @@ export function parseDimensions(url: URL): Dimensions {
 
 export function parseRenderOptions(url: URL): RenderOptions {
   return {
-    showTitle: parseBooleanFlag(url.searchParams.get("title")),
+    showTitle: url.searchParams.get("title") === 'on',
   };
-}
-
-function parseBooleanFlag(value: string | null): boolean {
-  if (!value) {
-    return false;
-  }
-
-  return ["1", "true", "yes", "on"].includes(value.toLowerCase());
 }
 
 function parseBoundedInteger(value: string | null, fallback: number, min: number, max: number): number {
