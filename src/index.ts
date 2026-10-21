@@ -1,4 +1,4 @@
-import { resolveAlbum } from "./lib/itunes";
+import { resolveAlbum } from "./lib/deezer";
 import { parseAlbums, parseDimensions, parseRenderOptions } from "./lib/query";
 import { renderSvg } from "./lib/svg";
 
